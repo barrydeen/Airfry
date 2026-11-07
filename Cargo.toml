@@ -1,0 +1,50 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/nostr-core",
+    "crates/nostr-store",
+    "crates/nostr-relay",
+    "crates/nostr-bench",
+    "crates/nostr-e2e",
+]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+rust-version = "1.80"
+
+[workspace.dependencies]
+nostr-core = { path = "crates/nostr-core" }
+nostr-store = { path = "crates/nostr-store" }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+sha2 = "0.10"
+hex = "0.4"
+thiserror = "2"
+secp256k1 = { version = "0.29", features = ["rand", "global-context", "std"] }
+parking_lot = "0.12"
+memmap2 = "0.9"
+crc32fast = "1"
+tokio = { version = "1", features = ["full"] }
+tokio-tungstenite = "0.24"
+futures-util = "0.3"
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+clap = { version = "4", features = ["derive", "env"] }
+rand = "0.8"
+libc = "0.2"
+num_cpus = "1"
+
+[profile.release]
+opt-level = 3
+lto = "fat"
+codegen-units = 1
+panic = "abort"
+debug = false
+incremental = false
+
+[profile.bench]
+opt-level = 3
+lto = "fat"
+codegen-units = 1

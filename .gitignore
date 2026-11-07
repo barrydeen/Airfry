@@ -1,0 +1,29 @@
+# Rust build artifacts
+target/
+**/*.rs.bk
+
+# Vendored third-party sources (strfry is fetched by scripts/fetch_strfry.sh)
+third_party/
+
+# Colony / orchestration scratch state
+.conclave/
+
+# Scratch directories
+tmp/
+nostr-data/
+strfry-db/
+bench-data/
+bench-tmp/
+*.tmp/
+
+# Logs
+*.log
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Editor noise
+.idea/
+.vscode/
+*.swp

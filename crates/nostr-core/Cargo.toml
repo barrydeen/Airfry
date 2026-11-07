@@ -1,0 +1,28 @@
+[package]
+name = "nostr-core"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Core Nostr primitives for Airfry: events, filters, NIP-01 messages, binary codec and schnorr keys"
+repository = "https://github.com/barrydeen/Airfry"
+homepage = "https://github.com/barrydeen/Airfry"
+documentation = "https://docs.rs/nostr-core"
+readme = "README.md"
+keywords = ["nostr", "event", "codec", "schnorr", "protocol"]
+categories = ["network-programming", "encoding", "cryptography"]
+authors = ["Barry Deen <barrydeen@protonmail.com>"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+serde = { workspace = true }
+serde_json = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+thiserror = { workspace = true }
+secp256k1 = { workspace = true }
+rand = { workspace = true }
+
+[dev-dependencies]

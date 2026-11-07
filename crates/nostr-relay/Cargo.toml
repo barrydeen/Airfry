@@ -1,0 +1,48 @@
+[package]
+name = "nostr-relay"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "High-throughput Nostr relay server for Airfry: WebSocket NIP-01/09/11/40/42/45 over a custom storage engine"
+repository = "https://github.com/barrydeen/Airfry"
+homepage = "https://github.com/barrydeen/Airfry"
+documentation = "https://docs.rs/nostr-relay"
+readme = "README.md"
+keywords = ["nostr", "relay", "websocket", "server", "nip"]
+categories = ["network-programming", "web-programming::websocket"]
+authors = ["Barry Deen <barrydeen@protonmail.com>"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lib]
+name = "nostr_relay"
+path = "src/lib.rs"
+
+[[bin]]
+name = "nostr-relay"
+path = "src/main.rs"
+
+[dependencies]
+nostr-core = { workspace = true }
+nostr-store = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+tokio = { workspace = true }
+tokio-tungstenite = { workspace = true }
+futures-util = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+clap = { workspace = true }
+hex = { workspace = true }
+libc = { workspace = true }
+parking_lot = { workspace = true }
+rand = { workspace = true }
+
+[dev-dependencies]
+tokio = { workspace = true }
+tokio-tungstenite = { workspace = true }
+futures-util = { workspace = true }
+serde_json = { workspace = true }
+nostr-core = { workspace = true }

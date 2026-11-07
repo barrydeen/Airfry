@@ -1,0 +1,31 @@
+[package]
+name = "nostr-store"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Nostr-optimized append-only storage engine for Airfry: segmented log, in-memory indexes, NIP-09/NIP-40"
+repository = "https://github.com/barrydeen/Airfry"
+homepage = "https://github.com/barrydeen/Airfry"
+documentation = "https://docs.rs/nostr-store"
+readme = "README.md"
+keywords = ["nostr", "storage", "database", "relay", "log"]
+categories = ["database-implementations", "network-programming"]
+authors = ["Barry Deen <barrydeen@protonmail.com>"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+nostr-core = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+thiserror = { workspace = true }
+parking_lot = { workspace = true }
+memmap2 = { workspace = true }
+crc32fast = { workspace = true }
+hex = { workspace = true }
+libc = { workspace = true }
+
+[dev-dependencies]
+rand = { workspace = true }
