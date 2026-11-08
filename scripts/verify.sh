@@ -2,12 +2,12 @@
 # Mission acceptance gate for the nostr relay.
 #
 # Builds the workspace in release mode, runs the test suite, boots the relay on an ephemeral
-# port with a throwaway data directory, and runs the nostr-bench smoke/load/req/store
+# port with a throwaway data directory, and runs the airfry-bench smoke/load/req/store
 # benchmarks. Asserts throughput/latency thresholds, verifies NIP-11 and restart persistence,
 # appends the measured numbers to BENCHMARKS.md and exits 0 only if everything passes.
 #
 # Thresholds are overridable via environment variables:
-#   MIN_INGEST_EPS   minimum publish throughput (events/s) for `nostr-bench load`   (default 50000)
+#   MIN_INGEST_EPS   minimum publish throughput (events/s) for `airfry-bench load`   (default 50000)
 #   MAX_REQ_P99_MS   maximum REQ time-to-EOSE p99 in milliseconds                   (default 250)
 #   MIN_STORE_EPS    minimum direct-store ingest throughput (events/s)              (default 100000)
 #   LOAD_EVENTS      number of events for the load benchmark                        (default 200000)
@@ -15,8 +15,8 @@
 #   REQ_QUERIES      number of REQ queries                                          (default 2000)
 #   REQ_CONNS        websocket connections for the REQ benchmark                    (default 8)
 #   STORE_EVENTS     number of events for the direct-store benchmark                (default 200000)
-#   RELAY_BIN        relay binary path                                              (default target/release/nostr-relay)
-#   BENCH_BIN        bench binary path                                              (default target/release/nostr-bench)
+#   RELAY_BIN        relay binary path                                              (default target/release/airfry-relay)
+#   BENCH_BIN        bench binary path                                              (default target/release/airfry-bench)
 #   SKIP_BUILD=1     skip cargo build/test (reuse existing binaries)
 #   SKIP_TESTS=1     skip cargo test
 #   SKIP_STRFRY=1    skip the head-to-head strfry comparison (not recommended)
@@ -49,15 +49,15 @@ LOAD_CONNS="${LOAD_CONNS:-16}"
 REQ_QUERIES="${REQ_QUERIES:-2000}"
 REQ_CONNS="${REQ_CONNS:-8}"
 STORE_EVENTS="${STORE_EVENTS:-200000}"
-RELAY_BIN="${RELAY_BIN:-$ROOT/target/release/nostr-relay}"
-BENCH_BIN="${BENCH_BIN:-$ROOT/target/release/nostr-bench}"
+RELAY_BIN="${RELAY_BIN:-$ROOT/target/release/airfry-relay}"
+BENCH_BIN="${BENCH_BIN:-$ROOT/target/release/airfry-bench}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 SKIP_TESTS="${SKIP_TESTS:-0}"
 SKIP_STRFRY="${SKIP_STRFRY:-0}"
 STRFRY_BIN="${STRFRY_BIN:-$ROOT/third_party/strfry/strfry}"
 STRFRY_CONF="${STRFRY_CONF:-$ROOT/third_party/strfry/strfry-bench.conf}"
 
-WORK="$(mktemp -d "${TMPDIR:-/tmp}/nostr-verify.XXXXXX")"
+WORK="$(mktemp -d "${TMPDIR:-/tmp}/airfry-verify.XXXXXX")"
 DATA_DIR="$WORK/data"
 LOG="$WORK/relay.log"
 RELAY_PID=""
@@ -254,7 +254,7 @@ else
 fi
 
 # --- smoke ---
-say "nostr-bench smoke"
+say "airfry-bench smoke"
 SMOKE_JSON="$WORK/smoke.json"
 if "$BENCH_BIN" smoke --url "$URL" --json >"$SMOKE_JSON" 2>"$WORK/smoke.err"; then
     pass "smoke (publish OK true + EVENT + EOSE)"
@@ -265,7 +265,7 @@ else
 fi
 
 # --- load ---
-say "nostr-bench load ($LOAD_EVENTS events, $LOAD_CONNS conns)"
+say "airfry-bench load ($LOAD_EVENTS events, $LOAD_CONNS conns)"
 LOAD_JSON="$WORK/load.json"
 LOAD_OK=0
 if "$BENCH_BIN" load --url "$URL" --events "$LOAD_EVENTS" --conns "$LOAD_CONNS" \
@@ -294,7 +294,7 @@ if [[ "$LOAD_OK" == "1" ]]; then
 fi
 
 # --- req ---
-say "nostr-bench req ($REQ_QUERIES queries, $REQ_CONNS conns)"
+say "airfry-bench req ($REQ_QUERIES queries, $REQ_CONNS conns)"
 REQ_JSON="$WORK/req.json"
 REQ_OK=0
 if "$BENCH_BIN" req --url "$URL" --queries "$REQ_QUERIES" --conns "$REQ_CONNS" \
@@ -323,7 +323,7 @@ if [[ "$REQ_OK" == "1" ]]; then
 fi
 
 # --- mixed (informational) ---
-say "nostr-bench mixed (5s, informational)"
+say "airfry-bench mixed (5s, informational)"
 MIXED_JSON="$WORK/mixed.json"
 if "$BENCH_BIN" mixed --url "$URL" --duration 5 --conns 8 --json >"$MIXED_JSON" 2>"$WORK/mixed.err"; then
     pass "mixed workload completed"
@@ -363,7 +363,7 @@ else
 fi
 
 # --- store (direct, no network) ---
-say "nostr-bench store ($STORE_EVENTS events)"
+say "airfry-bench store ($STORE_EVENTS events)"
 STORE_JSON="$WORK/store.json"
 STORE_OK=0
 if "$BENCH_BIN" store --events "$STORE_EVENTS" --queries 2000 --json >"$STORE_JSON" 2>"$WORK/store.err"; then
@@ -461,21 +461,21 @@ CORES="$(nproc 2>/dev/null || echo unknown)"
     printf 'Host: `%s`, %s cores. Thresholds: MIN_INGEST_EPS=%s, MAX_REQ_P99_MS=%s, MIN_STORE_EPS=%s.\n\n' \
         "$HOST" "$CORES" "$MIN_INGEST_EPS" "$MAX_REQ_P99_MS" "$MIN_STORE_EPS"
     printf '| benchmark | metric | value |\n| --- | --- | --- |\n'
-    printf '| nostr-bench load | ingest events/s | %s |\n' "$LOAD_EPS"
-    printf '| nostr-bench load | OK true | %s |\n' "$LOAD_OKTRUE"
-    printf '| nostr-bench load | ack p50 ms | %s |\n' "$LOAD_P50"
-    printf '| nostr-bench load | ack p99 ms | %s |\n' "$LOAD_P99"
-    printf '| nostr-bench load | ack p999 ms | %s |\n' "$LOAD_P999"
-    printf '| nostr-bench req | eose p50 ms | %s |\n' "$REQ_P50"
-    printf '| nostr-bench req | eose p99 ms | %s |\n' "$REQ_P99"
-    printf '| nostr-bench req | eose p999 ms | %s |\n' "$REQ_P999"
-    printf '| nostr-bench req | events/s served | %s |\n' "$REQ_EPS"
-    printf '| nostr-bench req | queries completed | %s |\n' "$REQ_COMPLETED"
-    printf '| nostr-bench store | ingest events/s | %s |\n' "$STORE_EPS"
-    printf '| nostr-bench store | events inserted | %s |\n' "$STORE_INSERTED"
-    printf '| nostr-bench store | query p50 ms | %s |\n' "$STORE_Q50"
-    printf '| nostr-bench store | query p99 ms | %s |\n' "$STORE_Q99"
-    printf '| nostr-bench store | query p999 ms | %s |\n' "$STORE_Q999"
+    printf '| airfry-bench load | ingest events/s | %s |\n' "$LOAD_EPS"
+    printf '| airfry-bench load | OK true | %s |\n' "$LOAD_OKTRUE"
+    printf '| airfry-bench load | ack p50 ms | %s |\n' "$LOAD_P50"
+    printf '| airfry-bench load | ack p99 ms | %s |\n' "$LOAD_P99"
+    printf '| airfry-bench load | ack p999 ms | %s |\n' "$LOAD_P999"
+    printf '| airfry-bench req | eose p50 ms | %s |\n' "$REQ_P50"
+    printf '| airfry-bench req | eose p99 ms | %s |\n' "$REQ_P99"
+    printf '| airfry-bench req | eose p999 ms | %s |\n' "$REQ_P999"
+    printf '| airfry-bench req | events/s served | %s |\n' "$REQ_EPS"
+    printf '| airfry-bench req | queries completed | %s |\n' "$REQ_COMPLETED"
+    printf '| airfry-bench store | ingest events/s | %s |\n' "$STORE_EPS"
+    printf '| airfry-bench store | events inserted | %s |\n' "$STORE_INSERTED"
+    printf '| airfry-bench store | query p50 ms | %s |\n' "$STORE_Q50"
+    printf '| airfry-bench store | query p99 ms | %s |\n' "$STORE_Q99"
+    printf '| airfry-bench store | query p999 ms | %s |\n' "$STORE_Q999"
     printf '\nChecks:\n\n'
     for line in "${SUMMARY[@]}"; do
         printf -- '- %s\n' "$line"

@@ -1,11 +1,12 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/nostr-core",
-    "crates/nostr-store",
-    "crates/nostr-relay",
-    "crates/nostr-bench",
-    "crates/nostr-e2e",
+    "crates/airfry-core",
+    "crates/airfry-store",
+    "crates/airfry-relay",
+    "crates/airfry-bench",
+    "crates/airfry-e2e",
+    "crates/airfry-negentropy",
 ]
 
 [workspace.package]
@@ -15,8 +16,8 @@ license = "MIT"
 rust-version = "1.80"
 
 [workspace.dependencies]
-nostr-core = { path = "crates/nostr-core" }
-nostr-store = { path = "crates/nostr-store" }
+airfry-core = { path = "crates/airfry-core" }
+airfry-store = { path = "crates/airfry-store" }
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 sha2 = "0.10"

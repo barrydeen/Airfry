@@ -1,14 +1,14 @@
-# Airfry design: nostr-relay and nostr-store
+# Airfry design: airfry-relay and airfry-store
 
-> Airfry is the project name; the crates and the release binary are named `nostr-*`.
+> Airfry is the project name; the crates and the release binary are airfry-branded (`airfry-*`).
 
 This document describes how the relay and its storage engine are built, and why the design is
 faster than strfry. It is written to be read alongside the code: file paths are given for every
 component so claims can be checked against the implementation.
 
-- Relay: `crates/nostr-relay/src/` (`main.rs`, `config.rs`, `http.rs`, `hub.rs`, `nip11.rs`, `util.rs`)
-- Storage: `crates/nostr-store/src/`
-- Shared primitives: `crates/nostr-core/src/` (`lib.rs`, `keys.rs`, `codec.rs`)
+- Relay: `crates/airfry-relay/src/` (`main.rs`, `config.rs`, `http.rs`, `hub.rs`, `nip11.rs`, `util.rs`)
+- Storage: `crates/airfry-store/src/`
+- Shared primitives: `crates/airfry-core/src/` (`lib.rs`, `keys.rs`, `codec.rs`)
 
 ---
 
@@ -29,7 +29,7 @@ The design therefore assumes:
 Performance is a first-class requirement, but never at the cost of correctness: an event that is
 returned by a REQ must be the same event that was accepted, with a valid signature.
 
-## 2. Storage engine design (`nostr-store`)
+## 2. Storage engine design (`airfry-store`)
 
 ### 2.1 Segmented append-only log
 
@@ -38,7 +38,7 @@ segment is rotated when it reaches `segment_bytes` (default 256 MiB, configurabl
 `--segment-bytes`). Rotation is a metadata operation: a new file is created and subsequent appends
 target it; existing segments are immutable once closed.
 
-Each record is a self-describing frame written by `crates/nostr-store/src/framing.rs`
+Each record is a self-describing frame written by `crates/airfry-store/src/framing.rs`
 (`write_record`), with the exact on-disk layout:
 
 ```
@@ -54,7 +54,7 @@ The magic is checked first, then the record type must be 1 or 2, then the length
 `MAX_PAYLOAD` (64 MiB), then the CRC must match before the payload is decoded. Segment files are
 named `seg-<10-digit index>.log` so they sort lexicographically in write order.
 
-The payload uses `nostr_core::codec` (`encode_event` / `decode_event`), a compact binary encoding
+The payload uses `airfry_core::codec` (`encode_event` / `decode_event`), a compact binary encoding
 that is bounds-checked on decode and rejects truncation, bad version bytes and invalid UTF-8. Using a
 binary encoding rather than JSON on the hot path removes the JSON parser from ingest entirely.
 
@@ -103,7 +103,7 @@ allows:
 - **time index** — `created_at -> events`, used for `since`/`until` range narrowing and for
   newest-first iteration when no other constraint is present.
 
-The index (`crates/nostr-store/src/index.rs`) holds every stored event as an `Arc<Event>` in
+The index (`crates/airfry-store/src/index.rs`) holds every stored event as an `Arc<Event>` in
 `by_id`, and the secondary lists (`by_author`, `by_kind`, `by_tag`, `by_time`) hold cloned
 `Arc<Event>` handles to the same allocation. Because the event bodies are shared by reference
 rather than copied per index entry, the resident set is one copy of each event plus the posting
@@ -150,7 +150,7 @@ serialisation.**
 Durability is a policy decision, not a hidden cost. The benchmark comparison against strfry uses the
 same policy on both sides so the numbers are comparable.
 
-## 3. Relay concurrency model (`nostr-relay`)
+## 3. Relay concurrency model (`airfry-relay`)
 
 ### 3.1 Front end
 
@@ -166,7 +166,7 @@ same port as the WebSocket endpoint, then hands the socket (with any over-read b
 1. **Frame admission.** The frame is size-checked against `--max-event-bytes` before parsing. An
    oversized frame is answered with `["OK", <id>, false, "invalid: ..."]` using a cheap id
    extraction (`util::extract_event_id`) so the client still gets a correlated response.
-2. **Parse.** `nostr_core::parse_client_message` produces a typed message; malformed input yields a
+2. **Parse.** `airfry_core::parse_client_message` produces a typed message; malformed input yields a
    `NOTICE` and the connection stays usable.
 3. **Verification.** Event id recomputation and BIP-340 schnorr verification run on a worker pool
    sized to the machine's cores. Verification is the dominant CPU cost of ingest, and it is
@@ -198,6 +198,26 @@ client can create.
 notified through the hub, in-flight frames are drained, and the store is flushed. The process exits
 with status 0.
 
+### 3.5 Negentropy / NIP-77 set reconciliation
+
+The relay implements the relay side of NIP-77 (`crates/airfry-relay/src/negentropy.rs`) on top of the
+`airfry-negentropy` crate. A `NEG-OPEN` queries the store for the `(created_at, id)` pairs matching
+the client's filter (the filter's `limit` is ignored — negentropy reconciles sets, not paginated
+windows), seals them into a `NegentropySet`, and answers with a `NEG-MSG`. Subsequent `NEG-MSG`
+frames drive the reconciliation state machine; when it completes the relay sends the events the
+client is missing as `EVENT` frames followed by `EOSE`, matching strfry.
+
+The crate's speed advantage over the reference C++ implementation comes from the sealed-set layout:
+it precomputes a prefix-sum table of the 256-bit id accumulators so a range fingerprint is O(1) (one
+256-bit subtraction plus one SHA-256), whereas the reference recomputes the accumulator by iterating
+the range (or walking LMDB B-tree nodes in strfry's relay storage). The reconciler never allocates
+per item, and the relay builds the sealed set once per `NEG-OPEN` and shares it through an `Arc`.
+
+Relay limits: at most 8 concurrent negentropy subscriptions per connection, a 1 MiB maximum hex
+payload, and protocol versions `0x60..=0x6f` accepted. See the README's
+[Negentropy / NIP-77 section](../README.md#negentropy--nip-77-set-reconciliation) for the wire
+messages and client usage.
+
 ## 4. Why this beats strfry
 
 strfry is the reference implementation of a fast relay. It is built on LMDB, and its performance
@@ -213,7 +233,7 @@ concurrently.
 
 - **strfry** verifies events in its writer path; verification is effectively serialised with respect
   to the LMDB write transaction, so adding cores does not proportionally add ingest throughput.
-- **nostr-relay** runs verification on a worker pool sized to the core count, with each event
+- **airfry-relay** runs verification on a worker pool sized to the core count, with each event
   independent. Ingest throughput scales with cores until the append path becomes the bottleneck —
   and the append path is a single sequential write, which is far cheaper than a verification.
 
@@ -227,7 +247,7 @@ LMDB is a B-tree on disk with a page cache. A REQ that matches a tag or a time r
 traversal of the B-tree, page faults on cold data, and copy-out of values. Even in the best case
 (warm cache) the traversal cost is proportional to the number of B-tree pages touched.
 
-`nostr-store` answers the same query from purpose-built in-memory indexes:
+`airfry-store` answers the same query from purpose-built in-memory indexes:
 
 - the index is keyed exactly the way NIP-01 filters are shaped (id, author, kind, tag, time), so a
   filter lookup is a hash lookup plus an ordered-set walk, not a range scan over a generic B-tree;
@@ -245,7 +265,7 @@ subscription.
 
 - **strfry** serialises the event for each subscriber (or at least re-walks the subscription set per
   event) in its writer path.
-- **nostr-relay** shares `Arc<Event>` handles and encodes each distinct frame once, then hands the
+- **airfry-relay** shares `Arc<Event>` handles and encodes each distinct frame once, then hands the
   same `String` to every matching connection's queue. The per-subscriber cost is a queue push, not a
   serialisation.
 
@@ -264,7 +284,7 @@ rather than O(subscribers × serialisation cost).
 
 ## 5. Correctness and adversarial behaviour
 
-The relay is tested against hostile input by `crates/nostr-e2e`:
+The relay is tested against hostile input by `crates/airfry-e2e`:
 
 - **Malformed frames** — non-JSON, empty arrays, missing fields, unknown message types: answered with
   `NOTICE`/`CLOSED`, connection stays usable.

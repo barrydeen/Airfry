@@ -1,20 +1,20 @@
 # Airfry — architecture: fastest Nostr relay in Rust with a custom Nostr-optimized storage engine
 
-> Airfry is the project name. The crates (`nostr-core`, `nostr-store`, `nostr-relay`, `nostr-bench`,
-> `nostr-e2e`) and the release binary (`nostr-relay`) keep their names.
+> Airfry is the project name. The crates (`airfry-core`, `airfry-store`, `airfry-relay`, `airfry-bench`,
+> `airfry-e2e`, `airfry-negentropy`) and the release binary (`airfry-relay`) are airfry-branded.
 
 ## Goal
-A production-shaped Nostr relay (`nostr-relay`) backed by a purpose-built storage engine
-(`nostr-store`) that beats generic DB-backed relays on ingest throughput and REQ latency.
+A production-shaped Nostr relay (`airfry-relay`) backed by a purpose-built storage engine
+(`airfry-store`) that beats generic DB-backed relays on ingest throughput and REQ latency.
 Everything must build with `cargo build --release` and pass `cargo test --workspace`.
 
 ## Workspace layout (fixed, do not rename)
 ```
 Cargo.toml                # workspace root (owned by Director)
-crates/nostr-core/        # event types, schnorr verification, filter matching, NIP-01 wire codec (Director)
-crates/nostr-store/       # custom storage engine (agent: storage)
-crates/nostr-relay/       # websocket relay server binary (agent: relay)
-crates/nostr-bench/       # load generator + smoke client (agent: bench)
+crates/airfry-core/        # event types, schnorr verification, filter matching, NIP-01 wire codec (Director)
+crates/airfry-store/       # custom storage engine (agent: storage)
+crates/airfry-relay/       # websocket relay server binary (agent: relay)
+crates/airfry-bench/       # load generator + smoke client (agent: bench)
 scripts/verify.sh         # end-to-end verification (agent: bench)
 BENCHMARKS.md             # measured numbers (agent: bench)
 README.md                 # usage (agent: hardening)
@@ -22,11 +22,11 @@ README.md                 # usage (agent: hardening)
 
 ## Ownership rules
 - Only edit files inside your own crate (plus your assigned docs/scripts). Never edit
-  `crates/nostr-core` or the workspace `Cargo.toml`; if you need a change there, message the Director.
+  `crates/airfry-core` or the workspace `Cargo.toml`; if you need a change there, message the Director.
 - Adding a dependency: add it to **your crate's** `Cargo.toml` only.
 - Keep `cargo build --workspace` green at all times. Commit-quality code, no `todo!()` left behind.
 
-## nostr-core public API (authoritative; already implemented)
+## airfry-core public API (authoritative; already implemented)
 ```rust
 pub struct Event { pub id: [u8;32], pub pubkey: [u8;32], pub created_at: u64, pub kind: u32,
                    pub tags: Vec<Vec<String>>, pub content: String, pub sig: [u8;64] }
@@ -54,7 +54,7 @@ pub enum RelayMessage { Event { sub_id: String, event: Event }, Ok { id: String,
 impl RelayMessage { pub fn to_json(&self) -> String; }
 ```
 
-## nostr-store public API (agent: storage must implement exactly this)
+## airfry-store public API (agent: storage must implement exactly this)
 ```rust
 pub struct StoreConfig { pub path: std::path::PathBuf, pub fsync: FsyncPolicy, pub segment_bytes: u64 }
 pub enum FsyncPolicy { Never, Interval(std::time::Duration), Always }
@@ -77,8 +77,8 @@ Requirements: append-only segmented log with checksums, crash-safe recovery, in-
 `insert` must be lock-light and batchable, queries must never block writers for long.
 Target: >= 100k events/s ingest on this machine (32 cores) and sub-millisecond in-memory REQ.
 
-## nostr-relay (agent: relay)
-- Binary `nostr-relay`, config via CLI flags + env: `--bind`, `--data-dir`, `--relay-name`,
+## airfry-relay (agent: relay)
+- Binary `airfry-relay`, config via CLI flags + env: `--bind`, `--data-dir`, `--relay-name`,
   `--relay-pubkey`, `--max-event-bytes`, `--max-subs-per-conn`, `--max-filters`, `--max-limit`.
 - NIP-01: EVENT/REQ/CLOSE/EOSE/OK/NOTICE/CLOSED, multiple filters per REQ, live fanout of new
   events to matching open subscriptions, per-connection limits, backpressure.
@@ -86,8 +86,8 @@ Target: >= 100k events/s ingest on this machine (32 cores) and sub-millisecond i
 - NIP-45 COUNT, NIP-09 deletion, NIP-40 expiration filtering, NIP-42 AUTH (optional but wire it).
 - Graceful shutdown on SIGINT/SIGTERM, structured logs, `/health` endpoint.
 
-## nostr-bench (agent: bench)
-- Binary `nostr-bench` with subcommands: `smoke`, `load`, `req`, `mixed`.
+## airfry-bench (agent: bench)
+- Binary `airfry-bench` with subcommands: `smoke`, `load`, `req`, `mixed`.
 - `load`: N concurrent publishers signing events (pre-signed pool), measure events/s.
 - `req`: measure REQ latency p50/p99/p999 for filters over the ingested corpus.
 - `mixed`: realistic blend, report JSON + markdown table.

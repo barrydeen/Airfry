@@ -1,0 +1,32 @@
+[package]
+name = "airfry-negentropy"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "Negentropy (NIP-77) set reconciliation for Airfry: protocol v1 wire format, O(1) range fingerprints and a fast reconciler"
+repository = "https://github.com/barrydeen/airfry"
+homepage = "https://github.com/barrydeen/airfry"
+documentation = "https://docs.rs/airfry-negentropy"
+readme = "README.md"
+keywords = ["nostr", "negentropy", "set-reconciliation", "relay", "sync"]
+categories = ["network-programming", "algorithms"]
+authors = ["Barry Deen <barrydeen@protonmail.com>"]
+
+[package.metadata.docs.rs]
+all-features = true
+rustdoc-args = ["--cfg", "docsrs"]
+
+[dependencies]
+sha2 = { workspace = true }
+hex = { workspace = true }
+
+[dev-dependencies]
+rand = { workspace = true }
+
+[[bin]]
+name = "negentropy-harness"
+path = "src/bin/harness.rs"
+
+[[bin]]
+name = "negentropy-bench"
+path = "src/bin/bench.rs"

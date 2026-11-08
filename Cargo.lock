@@ -12,6 +12,97 @@ dependencies = [
 ]
 
 [[package]]
+name = "airfry-bench"
+version = "0.1.0"
+dependencies = [
+ "airfry-core",
+ "airfry-store",
+ "clap",
+ "futures-util",
+ "hex",
+ "parking_lot",
+ "rand",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-tungstenite",
+]
+
+[[package]]
+name = "airfry-core"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "rand",
+ "secp256k1",
+ "serde",
+ "serde_json",
+ "sha2",
+ "thiserror 2.0.21",
+]
+
+[[package]]
+name = "airfry-e2e"
+version = "0.1.0"
+dependencies = [
+ "airfry-core",
+ "airfry-store",
+ "futures-util",
+ "hex",
+ "libc",
+ "rand",
+ "serde_json",
+ "tokio",
+ "tokio-tungstenite",
+]
+
+[[package]]
+name = "airfry-negentropy"
+version = "0.1.0"
+dependencies = [
+ "hex",
+ "rand",
+ "sha2",
+]
+
+[[package]]
+name = "airfry-relay"
+version = "0.1.0"
+dependencies = [
+ "airfry-core",
+ "airfry-negentropy",
+ "airfry-store",
+ "clap",
+ "futures-util",
+ "hex",
+ "libc",
+ "parking_lot",
+ "rand",
+ "serde",
+ "serde_json",
+ "tokio",
+ "tokio-tungstenite",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "airfry-store"
+version = "0.1.0"
+dependencies = [
+ "airfry-core",
+ "crc32fast",
+ "hex",
+ "libc",
+ "memmap2",
+ "parking_lot",
+ "rand",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.21",
+]
+
+[[package]]
 name = "anstream"
 version = "1.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -374,87 +465,6 @@ dependencies = [
  "libc",
  "wasi",
  "windows-sys",
-]
-
-[[package]]
-name = "nostr-bench"
-version = "0.1.0"
-dependencies = [
- "clap",
- "futures-util",
- "hex",
- "nostr-core",
- "nostr-store",
- "parking_lot",
- "rand",
- "serde",
- "serde_json",
- "tokio",
- "tokio-tungstenite",
-]
-
-[[package]]
-name = "nostr-core"
-version = "0.1.0"
-dependencies = [
- "hex",
- "rand",
- "secp256k1",
- "serde",
- "serde_json",
- "sha2",
- "thiserror 2.0.21",
-]
-
-[[package]]
-name = "nostr-e2e"
-version = "0.1.0"
-dependencies = [
- "futures-util",
- "hex",
- "libc",
- "nostr-core",
- "nostr-store",
- "rand",
- "serde_json",
- "tokio",
- "tokio-tungstenite",
-]
-
-[[package]]
-name = "nostr-relay"
-version = "0.1.0"
-dependencies = [
- "clap",
- "futures-util",
- "hex",
- "libc",
- "nostr-core",
- "nostr-store",
- "parking_lot",
- "rand",
- "serde",
- "serde_json",
- "tokio",
- "tokio-tungstenite",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "nostr-store"
-version = "0.1.0"
-dependencies = [
- "crc32fast",
- "hex",
- "libc",
- "memmap2",
- "nostr-core",
- "parking_lot",
- "rand",
- "serde",
- "serde_json",
- "thiserror 2.0.21",
 ]
 
 [[package]]

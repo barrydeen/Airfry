@@ -37,7 +37,7 @@ cargo build --release --workspace
 cargo test --workspace
 
 # the independent cross-crate conformance/adversarial suite only
-cargo test -p nostr-e2e
+cargo test -p airfry-e2e
 
 # acceptance gate: builds, tests, boots the relay, runs smoke/load/req/store, and
 # runs the head-to-head comparison against strfry. Exits 0 only if everything passes.
@@ -89,7 +89,7 @@ and is committed to the repository (it is not part of the strfry checkout).
 - One logical change per PR. Keep diffs reviewable.
 - Describe *what* changed and *why*, and include benchmark numbers if the change touches the hot
   path or the storage engine.
-- Add or update tests. Cross-crate behaviour belongs in `crates/nostr-e2e/tests/`; unit tests belong
+- Add or update tests. Cross-crate behaviour belongs in `crates/airfry-e2e/tests/`; unit tests belong
   next to the code they test.
 - CI must be green: `cargo fmt --check`, `cargo build --workspace --release`, `cargo test
   --workspace`.
@@ -100,7 +100,7 @@ and is committed to the repository (it is not part of the strfry checkout).
 
 Open an issue with:
 
-- the relay version (`target/release/nostr-relay --version`) and the exact flags you ran,
+- the relay version (`target/release/airfry-relay --version`) and the exact flags you ran,
 - the platform and Rust version,
 - the client message(s) that triggered the problem (redact keys if needed),
 - relevant stderr output with `RUST_LOG=debug`.

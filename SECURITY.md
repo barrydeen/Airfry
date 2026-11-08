@@ -16,7 +16,7 @@ Airfry is pre-1.0. Security fixes are made against the latest release on the `ma
 Report privately by email to **barrydeen@protonmail.com**. Include:
 
 - a description of the issue and its impact,
-- the relay version (`target/release/nostr-relay --version`) and the flags you ran,
+- the relay version (`target/release/airfry-relay --version`) and the flags you ran,
 - the platform and Rust version,
 - a minimal reproduction (client messages, filter, or a crafted event) if possible,
 - any relevant logs (`RUST_LOG=debug`).

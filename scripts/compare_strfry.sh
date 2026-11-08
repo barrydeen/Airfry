@@ -27,8 +27,8 @@
 #   STRFRY_RETRIES retries if strfry crashes on its phmap race (default 3)
 #   STRFRY_BIN    strfry binary path                      (default third_party/strfry/strfry)
 #   STRFRY_CONF   strfry config path                      (default third_party/strfry/strfry-bench.conf)
-#   RELAY_BIN     our relay binary path                   (default target/release/nostr-relay)
-#   BENCH_BIN     nostr-bench binary path                 (default target/release/nostr-bench)
+#   RELAY_BIN     our relay binary path                   (default target/release/airfry-relay)
+#   BENCH_BIN     airfry-bench binary path                 (default target/release/airfry-bench)
 #   SKIP_BUILD=1  skip cargo build (use existing binaries)
 # =============================================================================
 set -euo pipefail
@@ -47,8 +47,8 @@ SETTLE_SECS="${SETTLE_SECS:-3}"
 CONNECT_STAGGER_MS="${CONNECT_STAGGER_MS:-20}"
 STRFRY_BIN="${STRFRY_BIN:-$ROOT/third_party/strfry/strfry}"
 STRFRY_CONF="${STRFRY_CONF:-$ROOT/third_party/strfry/strfry-bench.conf}"
-RELAY_BIN="${RELAY_BIN:-$ROOT/target/release/nostr-relay}"
-BENCH_BIN="${BENCH_BIN:-$ROOT/target/release/nostr-bench}"
+RELAY_BIN="${RELAY_BIN:-$ROOT/target/release/airfry-relay}"
+BENCH_BIN="${BENCH_BIN:-$ROOT/target/release/airfry-bench}"
 SKIP_BUILD="${SKIP_BUILD:-0}"
 
 WORK="$(mktemp -d "${TMPDIR:-/tmp}/compare-strfry.XXXXXX")"
@@ -86,7 +86,7 @@ s.close()
 PY
 }
 
-# Extract a numeric field from nostr-bench JSON on stdin.
+# Extract a numeric field from airfry-bench JSON on stdin.
 jget() {
     python3 -c "import sys,json; d=json.load(sys.stdin); print(d$1)" 2>/dev/null || echo "0"
 }
@@ -142,16 +142,16 @@ PYEOF
 # ---------------------------------------------------------------------------
 if [[ "$SKIP_BUILD" != "1" ]]; then
     say "Building our relay + bench (release)"
-    cargo build --release -p nostr-relay -p nostr-bench 2>&1 | tail -3
+    cargo build --release -p airfry-relay -p airfry-bench 2>&1 | tail -3
 fi
 [[ -x "$RELAY_BIN" ]] || die "our relay binary missing: $RELAY_BIN"
-[[ -x "$BENCH_BIN" ]] || die "nostr-bench binary missing: $BENCH_BIN"
+[[ -x "$BENCH_BIN" ]] || die "airfry-bench binary missing: $BENCH_BIN"
 [[ -x "$STRFRY_BIN" ]] || die "strfry binary missing: $STRFRY_BIN (build with: cd third_party/strfry && make -j32)"
 [[ -f "$STRFRY_CONF" ]] || die "strfry config missing: $STRFRY_CONF"
 
 # ---------------------------------------------------------------------------
 # 1. Generate ONE pre-signed corpus (identical for both relays).
-#    nostr-bench signs deterministically from a fixed seed, so both relays
+#    airfry-bench signs deterministically from a fixed seed, so both relays
 #    receive byte-identical events. We sign once here to warm the pool and
 #    report signing time; the actual publish uses the same seed so the corpus
 #    is identical.

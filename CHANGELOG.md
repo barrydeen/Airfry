@@ -7,7 +7,7 @@ CLI may change between minor versions.
 
 Initial public release.
 
-### Relay (`crates/nostr-relay`, binary `nostr-relay`)
+### Relay (`crates/airfry-relay`, binary `airfry-relay`)
 
 - NIP-01 over WebSocket: `EVENT`, `REQ` (multiple filters), `CLOSE`, `EOSE`, `OK`, `NOTICE`,
   `CLOSED`, plus live subscription fanout.
@@ -23,7 +23,19 @@ Initial public release.
   `--max-event-bytes`, `--max-subs-per-conn`, `--max-filters`, `--max-limit`, `--max-conns`,
   `--verify-events`, `--fsync-policy`, `--require-auth`, `--segment-bytes`.
 
-### Storage engine (`crates/nostr-store`)
+### Negentropy / NIP-77 (`crates/airfry-negentropy`, relay `NEG-*` handlers)
+
+- NIP-77 negentropy set reconciliation: `NEG-OPEN`, `NEG-MSG`, `NEG-CLOSE` over the relay WebSocket,
+  with the relay sending missing events as `EVENT` frames followed by `EOSE` on completion (matching
+  strfry).
+- `airfry-negentropy` crate: Negentropy Protocol V1 wire format, byte-for-byte compatible with the
+  reference implementation, with O(1) range fingerprints via a precomputed prefix-accumulator table.
+- Relay limits: at most 8 concurrent negentropy subscriptions per connection, 1 MiB maximum hex
+  payload, protocol versions `0x60..=0x6f` accepted; filter `limit` ignored for the reconciled set.
+- Interop tests against the vendored strfry/negentropy C++ reference harness, plus a
+  `negentropy-bench` reconciliation benchmark.
+
+### Storage engine (`crates/airfry-store`)
 
 - Segmented append-only log with checksummed records and a compact binary event encoding.
 - Crash recovery: validated replay with torn-tail truncation; the store never refuses to start
@@ -35,9 +47,9 @@ Initial public release.
 - Configurable durability (`--fsync-policy never | interval:<seconds> | always`) and segment size
   (`--segment-bytes`).
 
-### Benchmark tooling (`crates/nostr-bench`, `scripts/`)
+### Benchmark tooling (`crates/airfry-bench`, `scripts/`)
 
-- `nostr-bench` load generator with `smoke`, `load`, `req`, `mixed` and `store` modes, JSON output
+- `airfry-bench` load generator with `smoke`, `load`, `req`, `mixed` and `store` modes, JSON output
   and latency percentiles.
 - `scripts/verify.sh` acceptance gate: release build, workspace tests, relay boot, smoke/load/req/
   store benchmarks, NIP-11 and restart-persistence checks, and the head-to-head comparison.
@@ -60,7 +72,7 @@ machine specification and the exact reproduction commands are in [BENCHMARKS.md]
 
 ### Tests
 
-- `crates/nostr-e2e` cross-crate conformance suite (`store_conformance.rs`, `relay_conformance.rs`)
+- `crates/airfry-e2e` cross-crate conformance suite (`store_conformance.rs`, `relay_conformance.rs`)
   and adversarial suites (`adversarial_store.rs`, `adversarial_relay.rs`) covering malformed frames,
   oversized events, duplicate ids, `limit: 0`, `since > until`, unknown kinds, multi-value tag
   filters, CLOSE mid-stream, concurrent REQ during heavy ingest, restart durability, NIP-09 of a
